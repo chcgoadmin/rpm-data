@@ -1,0 +1,93 @@
+*** logstash-forwarder-master/logstash-forwarder.init	1969-12-31 19:00:00.000000000 -0500
+--- logstash-forwarder-0.4.0/logstash-forwarder.init	2015-03-20 11:58:13.144368607 -0400
+***************
+*** 0 ****
+--- 1,77 ----
++ #! /bin/sh
++ 
++ # Rewrite from  Logstash Book init
++ # Made much more RHELcentric - chcgoadmin@gmail.com 
++ # The original of this file can be found at: http://logstashbook.com/code/index.html
++ #
++ # logstash-forwarder Start/Stop logstash-forwarder
++ #
++ # chkconfig: 345 99 99
++ # description: logstash-forwarder
++ # processname: logstash-forwarder
++ 
++ dpath="/opt/logstash-forwarder/"
++ 
++ # Source function library.
++ . /etc/rc.d/init.d/functions
++ 
++ # Check config
++ [ -e /etc/sysconfig/logstash-forwarder ] && . /etc/sysconfig/logstash-forwarder
++ WORKDIR=/opt/logstash-forwarder
++ prog=logstash-forwarder
++ exec=/opt/logstash-forwarder/bin/logstash-forwarder
++ lockfile=/var/lock/subsys/${prog}
++ 
++ start () {
++   if [[ -z $(pidofproc ${prog}) ]]; then
++     cd ${WORKDIR}
++     daemon --user ${LS_USR} "${exec}" "${LOGSTASH_FORWARDER_OPTIONS} &" 
++     isrunning=$?
++     [ ${isrunning} -eq 0 ] && touch ${lockfile}
++     echo "Starting ${prog}......"
++     return ${isrunning} 
++   else 
++    echo "${prog} is already running. $(pidofproc ${prog})"
++   fi
++ }
++ 
++ stop () {
++   if [[ ! -z $(pidofproc ${prog}) ]]; then
++     #kill -9 ${PID}
++     killproc ${prog}
++     [ $? -eq 0 ] && rm ${lockfile}
++     isrunning=$?
++     echo "Stopping ${prog}......"
++     return ${isrunning}
++   else 
++     echo "Error: ${prog} is not runing" 
++   fi
++ }
++ 
++ case $1 in
++ start)
++         start
++         ;;
++ stop)
++         stop
++         ;;
++ reload)
++         stop
++         sleep 3
++         start
++         ;;
++ restart)
++         stop
++         sleep 3
++         start
++         ;;
++ status)
++        status ${prog}  
++        RETVAL=$?
++        ;;
++ *fi)
++        echo $"Usage: $0 {start|stop|restart|reload|status}"
++        RETVAL=1
++ esac
++ exit 0
++ 
+*** logstash-forwarder-master/logstash-forwarder.sysconf	1969-12-31 19:00:00.000000000 -0500
+--- logstash-forwarder-0.4.0/logstash-forwarder.sysconf	2015-03-20 11:05:20.797205851 -0400
+***************
+*** 0 ****
+--- 1,5 ----
++ # Options for the Logstash Forwarder
++ LS_USR='logstash-forwarder'
++ LS_GRP='logstash-forwarder'
++ LOGSTASH_FORWARDER_OPTIONS="-spool-size 100 -config /etc/logstash-forwarder/logstash-forwarder.conf -log-to-syslog -quiet"
++ 
+
